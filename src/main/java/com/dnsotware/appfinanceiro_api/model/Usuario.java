@@ -4,16 +4,19 @@ import jakarta.persistence.*;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.jspecify.annotations.Nullable;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 
 @Table(name = "usuarios")
 @Entity(name = "Usuario")
 @Getter
+@Setter
 @NoArgsConstructor
 @EqualsAndHashCode(of = "id")
 public class Usuario implements UserDetails {
@@ -27,12 +30,16 @@ public class Usuario implements UserDetails {
 
     private String senha;
 
+    private String codigoReset;
+
+    private LocalDateTime codigoResetExpiracao;
+
+
     public Usuario(String nome, String email, String senhaHash){
         this.nome = nome;
         this.email = email;
         this.senha = senhaHash;
     }
-
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
