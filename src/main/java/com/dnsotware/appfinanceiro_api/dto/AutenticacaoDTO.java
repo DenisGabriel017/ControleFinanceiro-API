@@ -1,4 +1,4 @@
 package com.dnsotware.appfinanceiro_api.dto;
 
-public record AutenticacaoDTO() {
+public record AutenticacaoDTO(String email, String password) {
 }
