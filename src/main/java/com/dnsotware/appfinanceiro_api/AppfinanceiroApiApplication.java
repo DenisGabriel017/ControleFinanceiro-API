@@ -1,0 +1,13 @@
+package com.dnsotware.appfinanceiro_api;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication
+public class AppfinanceiroApiApplication {
+
+	public static void main(String[] args) {
+		SpringApplication.run(AppfinanceiroApiApplication.class, args);
+	}
+
+}
