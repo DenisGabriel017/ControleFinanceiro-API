@@ -57,4 +57,40 @@ public class TransacaoService {
         return lista.stream().map(TransacaoResponseDTO::new).collect(Collectors.toList());
     }
 
+    public TransacaoResponseDTO atualizar(Long id, TransacaoRequestDTO dados){
+        Usuario usuario = getUsuarioLogado();
+
+        Transacao transacao = transacaoRepository.findById(id).orElseThrow(() -> new RuntimeException("Transação não encontrada"));
+
+        if (!transacao.getUsuario().getId().equals(usuario.getId())){
+            throw new RuntimeException("Você não tem permissão para alterar essa transação");
+        }
+
+        if (!transacao.getCategoria().getId().equals(dados.categoriaId())){
+            Categoria novaCategoria = categoriaRepository.findById(dados.categoriaId())
+                    .orElseThrow(() -> new RuntimeException("Categoria não encontrada"));
+            transacao.setCategoria(novaCategoria);
+        }
+
+        transacao.setDescricao(dados.descricao());
+        transacao.setValor(dados.valor());
+        transacao.setData(dados.data());
+        transacao.setTipo(dados.tipo());
+
+        transacaoRepository.save(transacao);
+        return new TransacaoResponseDTO(transacao);
+    }
+
+    public void deletar(Long id){
+        Usuario usuario = getUsuarioLogado();
+
+        Transacao transacao = transacaoRepository.findById(id).orElseThrow(() -> new RuntimeException("Transação não encontrada"));
+
+        if (!transacao.getUsuario().getId().equals(usuario.getId())){
+            throw new RuntimeException("Você não tem permissão para deletar esta transação.");
+        }
+
+        transacaoRepository.delete(transacao);
+    }
+
 }
