@@ -51,15 +51,10 @@ public class AutenticacaoController {
 
     @PostMapping("/login")
     public ResponseEntity<LoginResponseDTO> login(@RequestBody AutenticacaoDTO data) {
-        try {
-            var usernamePassword = new UsernamePasswordAuthenticationToken(data.email(), data.senha());
-            var auth = this.authenticationManager.authenticate(usernamePassword);
-            var token = tokenService.gerarToken((Usuario) auth.getPrincipal());
-            return ResponseEntity.ok(new LoginResponseDTO(token));
-        }catch (AuthenticationException e){
-            System.err.println("Falha na autenticação: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(null);
-        }
+        var usernamePassword = new UsernamePasswordAuthenticationToken(data.email(), data.senha());
+        var auth = this.authenticationManager.authenticate(usernamePassword);
+        var token = tokenService.gerarToken((Usuario) auth.getPrincipal());
+        return ResponseEntity.ok(new LoginResponseDTO(token));
     }
 
     @PostMapping("/solicitar-codigo")
@@ -68,29 +63,17 @@ public class AutenticacaoController {
         return ResponseEntity.ok(mensagem);
 
     }
-
     @PostMapping("/validar-codigo")
     public ResponseEntity<String> validarCodigo(@RequestBody ResetCodeDTO data){
-        try{
-            usuarioService.validarCodigoReset(data.email(), data.codigo());
-            return ResponseEntity.ok("Código válido!");
-        }catch (IllegalArgumentException e){
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        }
+        usuarioService.validarCodigoReset(data.email(), data.codigo());
 
+        return ResponseEntity.ok("Código validado com sucesso.");
     }
-
     @PostMapping("/resetar-senha")
     public ResponseEntity<String> resetarSenha(@RequestBody ResetSenhaDTO data){
-        try {
-            Usuario usuario = usuarioService.validarCodigoReset(data.email(), data.codigo());
-
-            usuarioService.resetarSenha(usuario,data.novaSenha());
-
-            return ResponseEntity.ok("Senha redefinida com sucesso!");
-        }catch (IllegalArgumentException e){
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        }
+        Usuario usuario = usuarioService.validarCodigoReset(data.email(), data.codigo());
+        usuarioService.resetarSenha(usuario, data.novaSenha());
+        return ResponseEntity.ok("Senha redefinida com sucesso!");
     }
 
 
