@@ -3,6 +3,7 @@ package com.dnsotware.appfinanceiro_api.service;
 import com.dnsotware.appfinanceiro_api.dto.RegistroDTO;
 import com.dnsotware.appfinanceiro_api.model.Usuario;
 import com.dnsotware.appfinanceiro_api.repository.UsuarioRepository;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -22,23 +23,25 @@ public class UsuarioService {
         this.emailService = emailService;
     }
 
-
     public void registrar(RegistroDTO data) {
         if (this.usuarioRepository.findByEmail(data.email()) != null) {
             throw new RuntimeException("Usuário com esse email já existe.");
         }
+
         String senhaCriptografada = passwordEncoder.encode(data.senha());
+
         Usuario novoUsuario = new Usuario(data.nome(), data.email(), senhaCriptografada);
         this.usuarioRepository.save(novoUsuario);
     }
 
     public String solicitarCodigoReset(String email) {
+        UserDetails usuarioDetails = usuarioRepository.findByEmail(email);
 
-        Usuario usuario = (Usuario) usuarioRepository.findByEmail(email);
-
-        if (usuario == null) {
+        if (usuarioDetails == null) {
             return "Solicitação processada. Verifique seu e-mail.";
         }
+
+        Usuario usuario = (Usuario) usuarioDetails;
 
         String codigo = String.format("%06d", new Random().nextInt(999999));
 
@@ -54,10 +57,14 @@ public class UsuarioService {
 
         return "Solicitação processada. Verifique seu e-mail.";
     }
-    public Usuario validarCodigoReset(String email, String codigo) {
-        Usuario usuario = (Usuario) usuarioRepository.findByEmail(email);
 
-        if (usuario == null) throw new IllegalArgumentException("E-mail inválido.");
+    public Usuario validarCodigoReset(String email, String codigo) {
+        UserDetails usuarioDetails = usuarioRepository.findByEmail(email);
+
+        if (usuarioDetails == null) throw new IllegalArgumentException("E-mail inválido.");
+
+        Usuario usuario = (Usuario) usuarioDetails;
+
         if (!codigo.equals(usuario.getCodigoReset())) throw new IllegalArgumentException("Código incorreto.");
         if (LocalDateTime.now().isAfter(usuario.getCodigoResetExpiracao())) throw new IllegalArgumentException("Código expirado.");
 
@@ -66,7 +73,9 @@ public class UsuarioService {
 
     public void resetarSenha(Usuario usuario, String novaSenha) {
         String senhaCriptografada = passwordEncoder.encode(novaSenha);
+
         usuario.setSenha(senhaCriptografada);
+
         usuario.setCodigoReset(null);
         usuario.setCodigoResetExpiracao(null);
         usuarioRepository.save(usuario);

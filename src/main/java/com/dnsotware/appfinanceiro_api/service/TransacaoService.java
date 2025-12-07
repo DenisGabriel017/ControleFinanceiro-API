@@ -93,4 +93,13 @@ public class TransacaoService {
         transacaoRepository.delete(transacao);
     }
 
+    public Transacao salvarSistema(Transacao transacao) {
+        // Aqui NÃO chamamos o getUsuarioLogado(), pois o robô roda sozinho sem login.
+        // Apenas confiamos que a transação já veio montada corretamente.
+        transacaoRepository.save(transacao);
+        return transacao;
+    }
+
 }
+
+
