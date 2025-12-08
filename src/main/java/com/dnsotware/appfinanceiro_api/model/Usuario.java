@@ -41,12 +41,15 @@ public class Usuario implements UserDetails {
 
     private String tenantId;
 
-
     public Usuario(String nome, String email, String senhaHash){
         this.nome = nome;
         this.email = email;
         this.senha = senhaHash;
     }
+
+    @ManyToOne
+    @JoinColumn(name = "grupo_id")
+    private Grupo grupo;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -64,22 +67,14 @@ public class Usuario implements UserDetails {
     }
 
     @Override
-    public boolean isAccountNonExpired() {
-        return true;
-    }
+    public boolean isAccountNonExpired() { return true; }
 
     @Override
-    public boolean isAccountNonLocked() {
-        return true;
-    }
+    public boolean isAccountNonLocked() { return true; }
 
     @Override
-    public boolean isCredentialsNonExpired() {
-        return true;
-    }
+    public boolean isCredentialsNonExpired() { return true; }
 
     @Override
-    public boolean isEnabled() {
-        return true;
-    }
+    public boolean isEnabled() { return true; }
 }

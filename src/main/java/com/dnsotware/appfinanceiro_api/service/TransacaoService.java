@@ -30,10 +30,10 @@ public class TransacaoService {
         var authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null && authentication.getPrincipal() instanceof Usuario) {
             return (Usuario) authentication.getPrincipal();
-
         }
-        throw new RuntimeException("Não foi possivel identificar o usuário logado. ");
+        throw new RuntimeException("Não foi possivel identificar o usuário logado.");
     }
+
     public TransacaoResponseDTO criar (TransacaoRequestDTO dados){
         Usuario usuario = getUsuarioLogado();
         Categoria categoria = categoriaRepository.findById(dados.categoriaId()).orElseThrow(() -> new RuntimeException("Categoria não encontrada"));
@@ -51,10 +51,19 @@ public class TransacaoService {
         return new TransacaoResponseDTO(nova);
     }
 
-    public List<TransacaoResponseDTO> listar(){
+    public List<TransacaoResponseDTO> listar() {
         Usuario usuario = getUsuarioLogado();
-        List<Transacao> lista = transacaoRepository.findAllByUsuario(usuario);
-        return lista.stream().map(TransacaoResponseDTO::new).collect(Collectors.toList());
+        List<Transacao> transacoes;
+
+        if (usuario.getGrupo() != null) {
+            transacoes = transacaoRepository.findByUsuario_Grupo(usuario.getGrupo());
+        } else {
+            transacoes = transacaoRepository.findAllByUsuario(usuario);
+        }
+
+        return transacoes.stream()
+                .map(TransacaoResponseDTO::new)
+                .collect(Collectors.toList());
     }
 
     public TransacaoResponseDTO atualizar(Long id, TransacaoRequestDTO dados){
@@ -62,9 +71,7 @@ public class TransacaoService {
 
         Transacao transacao = transacaoRepository.findById(id).orElseThrow(() -> new RuntimeException("Transação não encontrada"));
 
-        if (!transacao.getUsuario().getId().equals(usuario.getId())){
-            throw new RuntimeException("Você não tem permissão para alterar essa transação");
-        }
+        validarPermissao(usuario, transacao);
 
         if (!transacao.getCategoria().getId().equals(dados.categoriaId())){
             Categoria novaCategoria = categoriaRepository.findById(dados.categoriaId())
@@ -86,20 +93,28 @@ public class TransacaoService {
 
         Transacao transacao = transacaoRepository.findById(id).orElseThrow(() -> new RuntimeException("Transação não encontrada"));
 
-        if (!transacao.getUsuario().getId().equals(usuario.getId())){
-            throw new RuntimeException("Você não tem permissão para deletar esta transação.");
-        }
+        validarPermissao(usuario, transacao);
 
         transacaoRepository.delete(transacao);
     }
 
     public Transacao salvarSistema(Transacao transacao) {
-        // Aqui NÃO chamamos o getUsuarioLogado(), pois o robô roda sozinho sem login.
-        // Apenas confiamos que a transação já veio montada corretamente.
+
         transacaoRepository.save(transacao);
         return transacao;
     }
 
+    private void validarPermissao(Usuario usuarioLogado, Transacao transacao) {
+
+        boolean ehDono = transacao.getUsuario().getId().equals(usuarioLogado.getId());
+
+        boolean mesmoGrupo = false;
+        if (usuarioLogado.getGrupo() != null && transacao.getUsuario().getGrupo() != null) {
+            mesmoGrupo = usuarioLogado.getGrupo().getId().equals(transacao.getUsuario().getGrupo().getId());
+        }
+        
+        if (!ehDono && !mesmoGrupo) {
+            throw new RuntimeException("Você não tem permissão para alterar/deletar este registro.");
+        }
+    }
 }
-
-
