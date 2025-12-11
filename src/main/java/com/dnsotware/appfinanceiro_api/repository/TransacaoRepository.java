@@ -21,4 +21,5 @@ public interface TransacaoRepository extends JpaRepository<Transacao, Long> {
 
     @Query("SELECT t.categoria, SUM(t.valor) FROM Transacao t " + "WHERE t.usuario = :usuario AND t.tipo = 'DESPESA' " + "GROUP BY t.categoria")
     List<Object[]>somarDespesasPorCategoria(@Param("usuario") Usuario usuario);
+
 }

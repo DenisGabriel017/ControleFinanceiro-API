@@ -8,6 +8,10 @@ import com.dnsotware.appfinanceiro_api.repository.UsuarioRepository;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.UUID;
+
 @Service
 public class GrupoService {
 
@@ -20,16 +24,20 @@ public class GrupoService {
     }
 
     public Grupo criar(GrupoRequestDTO dados) {
-
         Usuario usuarioLogado = getUsuarioLogado();
 
         if (usuarioLogado.getGrupo() != null) {
-            throw new RuntimeException("Você já participa de um grupo! Saia dele antes de criar outro.");
+            throw new RuntimeException("Você já participa de um grupo!");
         }
 
         Grupo novoGrupo = new Grupo();
         novoGrupo.setNome(dados.nome());
         novoGrupo.setCriador(usuarioLogado);
+
+        String codigo = UUID.randomUUID().toString().substring(0, 6).toUpperCase();
+        novoGrupo.setCodigoAcesso(codigo);
+
+        novoGrupo.setValidadeCodigo(LocalDateTime.now().plusHours(24));
 
         grupoRepository.save(novoGrupo);
 
@@ -39,11 +47,113 @@ public class GrupoService {
         return novoGrupo;
     }
 
+    public Grupo entrar(String codigoAcesso) {
+        Usuario usuarioLogado = getUsuarioLogado();
+
+        if (usuarioLogado.getGrupo() != null) {
+            throw new RuntimeException("Você já está em um grupo! Saia antes de entrar em outro.");
+        }
+
+        Grupo grupo = grupoRepository.findByCodigoAcesso(codigoAcesso)
+                .orElseThrow(() -> new RuntimeException("Código de grupo inválido ou inexistente."));
+
+        if (grupo.getValidadeCodigo() != null && LocalDateTime.now().isAfter(grupo.getValidadeCodigo())) {
+            throw new RuntimeException("Este código de convite expirou! Peça para o dono gerar um novo.");
+        }
+
+        usuarioLogado.setGrupo(grupo);
+        usuarioRepository.save(usuarioLogado);
+
+        return grupo;
+    }
+
     private Usuario getUsuarioLogado() {
         var authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null && authentication.getPrincipal() instanceof Usuario) {
             return (Usuario) authentication.getPrincipal();
         }
         throw new RuntimeException("Usuário não identificado");
+    }
+
+    public void sair() {
+        Usuario usuario = getUsuarioLogado();
+
+        if (usuario.getGrupo() == null) {
+            throw new RuntimeException("Você não participa de nenhum grupo!");
+        }
+
+        usuario.setGrupo(null);
+        usuarioRepository.save(usuario);
+    }
+
+    public void removerMembro(Long idMembroParaRemover) {
+        Usuario dono = getUsuarioLogado();
+        Grupo grupo = dono.getGrupo();
+
+        if (grupo == null) {
+            throw new RuntimeException("Você não é dono de nenhum grupo.");
+        }
+
+        if (!grupo.getCriador().getId().equals(dono.getId())) {
+            throw new RuntimeException("Apenas o criador do grupo pode remover membros.");
+        }
+
+        Usuario vitima = usuarioRepository.findById(idMembroParaRemover)
+                .orElseThrow(() -> new RuntimeException("Usuário não encontrado."));
+
+        if (vitima.getGrupo() == null || !vitima.getGrupo().getId().equals(grupo.getId())) {
+            throw new RuntimeException("Este usuário não pertence ao seu grupo.");
+        }
+
+        if (vitima.getId().equals(dono.getId())) {
+            throw new RuntimeException("Você não pode se expulsar. Use a opção 'Sair do Grupo'.");
+        }
+
+        vitima.setGrupo(null);
+        usuarioRepository.save(vitima);
+    }
+
+    public String gerarNovoCodigo() {
+        Usuario usuario = getUsuarioLogado();
+        Grupo grupo = usuario.getGrupo();
+
+        if (grupo == null) {
+            throw new RuntimeException("Você não possui um grupo.");
+        }
+
+        if (!grupo.getCriador().getId().equals(usuario.getId())) {
+            throw new RuntimeException("Apenas o criador do grupo pode gerar novos códigos.");
+        }
+
+        String novoCodigo = UUID.randomUUID().toString().substring(0, 6).toUpperCase();
+        grupo.setCodigoAcesso(novoCodigo);
+        grupo.setValidadeCodigo(LocalDateTime.now().plusHours(24));
+        grupoRepository.save(grupo);
+
+        return novoCodigo;
+    }
+
+    @org.springframework.transaction.annotation.Transactional // Garante que tudo aconteça ou nada aconteça
+    public void deletarGrupo() {
+        Usuario dono = getUsuarioLogado();
+        Grupo grupo = dono.getGrupo();
+
+        if (grupo == null) {
+            throw new RuntimeException("Você não possui um grupo para excluir.");
+        }
+
+        if (!grupo.getCriador().getId().equals(dono.getId())) {
+            throw new RuntimeException("Apenas o criador pode excluir o grupo.");
+        }
+
+        List<Usuario> membros = usuarioRepository.findAllByGrupo(grupo);
+
+        for (Usuario membro : membros) {
+            membro.setGrupo(null);
+        }
+
+        usuarioRepository.saveAll(membros);
+
+        grupoRepository.delete(grupo);
     }
 }

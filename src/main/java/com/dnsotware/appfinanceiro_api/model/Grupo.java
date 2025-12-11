@@ -1,19 +1,18 @@
 package com.dnsotware.appfinanceiro_api.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Getter;
-import lombok.Setter;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-@Setter
 @Getter
 @Entity
 @Table(name = "grupos")
 public class Grupo {
-
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -21,8 +20,14 @@ public class Grupo {
 
     private String nome;
 
+    @Column(unique = true)
+    private String codigoAcesso;
+
+    private LocalDateTime validadeCodigo;
+
     @OneToOne
     @JoinColumn(name = "criador_id")
+    @JsonIgnoreProperties({"grupo", "senha", "authorities", "accountNonExpired", "accountNonLocked", "credentialsNonExpired", "enabled"})
     private Usuario criador;
 
     @OneToMany(mappedBy = "grupo")
@@ -36,4 +41,15 @@ public class Grupo {
         this.criador = criador;
     }
 
+    public void setId(Long id) { this.id = id; }
+
+    public void setNome(String nome) { this.nome = nome; }
+
+    public void setCodigoAcesso(String codigoAcesso) { this.codigoAcesso = codigoAcesso; }
+
+    public void setValidadeCodigo(LocalDateTime validadeCodigo) { this.validadeCodigo = validadeCodigo; }
+
+    public void setCriador(Usuario criador) { this.criador = criador; }
+
+    public void setMembros(List<Usuario> membros) { this.membros = membros; }
 }

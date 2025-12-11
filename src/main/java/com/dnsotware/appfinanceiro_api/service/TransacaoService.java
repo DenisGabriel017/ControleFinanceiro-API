@@ -112,7 +112,7 @@ public class TransacaoService {
         if (usuarioLogado.getGrupo() != null && transacao.getUsuario().getGrupo() != null) {
             mesmoGrupo = usuarioLogado.getGrupo().getId().equals(transacao.getUsuario().getGrupo().getId());
         }
-        
+
         if (!ehDono && !mesmoGrupo) {
             throw new RuntimeException("Você não tem permissão para alterar/deletar este registro.");
         }

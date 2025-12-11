@@ -21,4 +21,34 @@ public class GrupoController {
         var novoGrupo = service.criar(dados);
         return ResponseEntity.ok(novoGrupo);
     }
+
+    @PostMapping("/entrar")
+    public ResponseEntity<Grupo> entrar(@RequestParam String codigo) {
+        var grupo = service.entrar(codigo);
+        return ResponseEntity.ok(grupo);
+    }
+
+    @DeleteMapping("/sair")
+    public ResponseEntity<Void> sair() {
+        service.sair();
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/membros/{id}")
+    public ResponseEntity<Void> removerMembro(@PathVariable Long id) {
+        service.removerMembro(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("/codigo-acesso")
+    public ResponseEntity<String> gerarNovoCodigo() {
+        String novoCodigo = service.gerarNovoCodigo();
+        return ResponseEntity.ok(novoCodigo);
+    }
+
+    @DeleteMapping("/deletar")
+    public ResponseEntity<Void> deletarGrupo() {
+        service.deletarGrupo();
+        return ResponseEntity.noContent().build();
+    }
 }
