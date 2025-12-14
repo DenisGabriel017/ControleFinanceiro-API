@@ -2,6 +2,7 @@ package com.dnsotware.appfinanceiro_api.controller;
 
 import com.dnsotware.appfinanceiro_api.dto.GrupoRequestDTO;
 import com.dnsotware.appfinanceiro_api.model.Grupo;
+import com.dnsotware.appfinanceiro_api.dto.GrupoDetalhadoDTO;
 import com.dnsotware.appfinanceiro_api.service.GrupoService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -32,6 +33,17 @@ public class GrupoController {
     public ResponseEntity<Void> sair() {
         service.sair();
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/meu-grupo")
+    public ResponseEntity<GrupoDetalhadoDTO> detalharGrupo() {
+        GrupoDetalhadoDTO grupo = service.buscarMeuGrupo();
+
+        if (grupo == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        return ResponseEntity.ok(grupo);
     }
 
     @DeleteMapping("/membros/{id}")

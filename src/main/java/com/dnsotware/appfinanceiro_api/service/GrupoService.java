@@ -3,6 +3,8 @@ package com.dnsotware.appfinanceiro_api.service;
 import com.dnsotware.appfinanceiro_api.dto.GrupoRequestDTO;
 import com.dnsotware.appfinanceiro_api.model.Grupo;
 import com.dnsotware.appfinanceiro_api.model.Usuario;
+import com.dnsotware.appfinanceiro_api.dto.GrupoDetalhadoDTO;
+import java.util.stream.Collectors;
 import com.dnsotware.appfinanceiro_api.repository.GrupoRepository;
 import com.dnsotware.appfinanceiro_api.repository.UsuarioRepository;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -111,6 +113,31 @@ public class GrupoService {
 
         vitima.setGrupo(null);
         usuarioRepository.save(vitima);
+    }
+
+    public GrupoDetalhadoDTO buscarMeuGrupo() {
+        Usuario usuarioLogado = getUsuarioLogado();
+        Grupo grupo = usuarioLogado.getGrupo();
+
+        if (grupo == null) {
+            return null; // O usuário não tem grupo
+        }
+
+        List<Usuario> membros = usuarioRepository.findAllByGrupo(grupo);
+
+        List<GrupoDetalhadoDTO.MembroDTO> membrosDTO = membros.stream()
+                .map(m -> new GrupoDetalhadoDTO.MembroDTO(m.getId(), m.getNome(), m.getEmail()))
+                .collect(Collectors.toList());
+
+        return new GrupoDetalhadoDTO(
+                grupo.getId(),
+                grupo.getNome(),
+                grupo.getCodigoAcesso(),
+                grupo.getValidadeCodigo(),
+                grupo.getCriador().getId(),
+                grupo.getCriador().getNome(),
+                membrosDTO
+        );
     }
 
     public String gerarNovoCodigo() {
