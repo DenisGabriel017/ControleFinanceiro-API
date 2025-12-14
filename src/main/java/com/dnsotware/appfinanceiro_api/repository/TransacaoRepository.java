@@ -13,13 +13,21 @@ import java.util.List;
 
 @Repository
 public interface TransacaoRepository extends JpaRepository<Transacao, Long> {
+
     List<Transacao> findAllByUsuario(Usuario usuario);
+    List<Transacao> findAllByGrupo(Grupo grupo);
     List<Transacao> findByUsuario_Grupo(Grupo grupo);
 
     @Query("SELECT COALESCE(SUM(t.valor),0) FROM Transacao t WHERE t.usuario = :usuario AND t.tipo = :tipo")
     BigDecimal somarPorTipo(@Param("usuario") Usuario usuario, @Param("tipo") String tipo);
 
-    @Query("SELECT t.categoria, SUM(t.valor) FROM Transacao t " + "WHERE t.usuario = :usuario AND t.tipo = 'DESPESA' " + "GROUP BY t.categoria")
-    List<Object[]>somarDespesasPorCategoria(@Param("usuario") Usuario usuario);
+    @Query("SELECT t.categoria, SUM(t.valor) FROM Transacao t WHERE t.usuario = :usuario AND t.tipo = 'DESPESA' GROUP BY t.categoria")
+    List<Object[]> somarDespesasPorCategoria(@Param("usuario") Usuario usuario);
+
+    @Query("SELECT COALESCE(SUM(t.valor),0) FROM Transacao t WHERE t.grupo = :grupo AND t.tipo = :tipo")
+    BigDecimal somarPorTipoGrupo(@Param("grupo") Grupo grupo, @Param("tipo") String tipo);
+
+    @Query("SELECT t.categoria, SUM(t.valor) FROM Transacao t WHERE t.grupo = :grupo AND t.tipo = 'DESPESA' GROUP BY t.categoria")
+    List<Object[]> somarDespesasPorCategoriaGrupo(@Param("grupo") Grupo grupo);
 
 }

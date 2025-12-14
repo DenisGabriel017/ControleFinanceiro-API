@@ -4,7 +4,7 @@ import java.math.BigDecimal;
 
 public record DashboardCategoriaDTO(
         String nomeCategoria,
-        BigDecimal orcado,
+        BigDecimal limite,
         BigDecimal gasto,
         BigDecimal restante
 ) {

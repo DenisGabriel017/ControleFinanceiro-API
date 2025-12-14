@@ -47,6 +47,10 @@ public class TransacaoService {
                 categoria
         );
 
+        nova.setGrupo(usuario.getGrupo());
+
+        transacaoRepository.save(nova);
+
         transacaoRepository.save(nova);
         return new TransacaoResponseDTO(nova);
     }
@@ -56,8 +60,10 @@ public class TransacaoService {
         List<Transacao> transacoes;
 
         if (usuario.getGrupo() != null) {
-            transacoes = transacaoRepository.findByUsuario_Grupo(usuario.getGrupo());
+
+            transacoes = transacaoRepository.findAllByGrupo(usuario.getGrupo());
         } else {
+
             transacoes = transacaoRepository.findAllByUsuario(usuario);
         }
 
@@ -68,7 +74,6 @@ public class TransacaoService {
 
     public TransacaoResponseDTO atualizar(Long id, TransacaoRequestDTO dados){
         Usuario usuario = getUsuarioLogado();
-
         Transacao transacao = transacaoRepository.findById(id).orElseThrow(() -> new RuntimeException("Transação não encontrada"));
 
         validarPermissao(usuario, transacao);
@@ -90,7 +95,6 @@ public class TransacaoService {
 
     public void deletar(Long id){
         Usuario usuario = getUsuarioLogado();
-
         Transacao transacao = transacaoRepository.findById(id).orElseThrow(() -> new RuntimeException("Transação não encontrada"));
 
         validarPermissao(usuario, transacao);
@@ -99,7 +103,6 @@ public class TransacaoService {
     }
 
     public Transacao salvarSistema(Transacao transacao) {
-
         transacaoRepository.save(transacao);
         return transacao;
     }
@@ -109,8 +112,8 @@ public class TransacaoService {
         boolean ehDono = transacao.getUsuario().getId().equals(usuarioLogado.getId());
 
         boolean mesmoGrupo = false;
-        if (usuarioLogado.getGrupo() != null && transacao.getUsuario().getGrupo() != null) {
-            mesmoGrupo = usuarioLogado.getGrupo().getId().equals(transacao.getUsuario().getGrupo().getId());
+        if (usuarioLogado.getGrupo() != null && transacao.getGrupo() != null) {
+            mesmoGrupo = usuarioLogado.getGrupo().getId().equals(transacao.getGrupo().getId());
         }
 
         if (!ehDono && !mesmoGrupo) {

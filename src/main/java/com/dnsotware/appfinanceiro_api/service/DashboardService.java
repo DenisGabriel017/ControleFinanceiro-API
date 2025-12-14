@@ -34,34 +34,62 @@ public class DashboardService {
         if (authentication != null && authentication.getPrincipal() instanceof Usuario){
             return (Usuario) authentication.getPrincipal();
         }
-        throw new RuntimeException("Não foi possivel identificar o usuário logado.");
+        throw new RuntimeException("Não foi possível identificar o usuário logado.");
     }
 
     public DashboardResponseDTO carregarDashboard(){
         Usuario usuario = getUsuarioLogado();
+        BigDecimal receitas;
+        BigDecimal despesas;
 
-        BigDecimal resceitas = transacaoRepository.somarPorTipo(usuario,"RECEITA");
-        BigDecimal despesas = transacaoRepository.somarPorTipo(usuario,"DESPESA");
+        if (usuario.getGrupo() != null) {
 
-        BigDecimal saldo = resceitas.subtract(despesas);
+            receitas = transacaoRepository.somarPorTipoGrupo(usuario.getGrupo(), "RECEITA");
+            despesas = transacaoRepository.somarPorTipoGrupo(usuario.getGrupo(), "DESPESA");
+        } else {
 
-        return new DashboardResponseDTO(resceitas, despesas, saldo);
+            receitas = transacaoRepository.somarPorTipo(usuario, "RECEITA");
+            despesas = transacaoRepository.somarPorTipo(usuario, "DESPESA");
+        }
+
+        if (receitas == null) receitas = BigDecimal.ZERO;
+        if (despesas == null) despesas = BigDecimal.ZERO;
+
+        BigDecimal saldo = receitas.subtract(despesas);
+
+        return new DashboardResponseDTO(receitas, despesas, saldo);
     }
 
     public List<DashboardCategoriaDTO> carregarDetalhamento(){
         Usuario usuario = getUsuarioLogado();
+
         List<Orcamento> orcamentos = orcamentoRepository.findAllByUsuario(usuario);
-        List<Object[]> gastosPorCategoria = transacaoRepository.somarDespesasPorCategoria(usuario);
+
+        List<Object[]> gastosPorCategoria;
+
+        if (usuario.getGrupo() != null) {
+
+            gastosPorCategoria = transacaoRepository.somarDespesasPorCategoriaGrupo(usuario.getGrupo());
+        } else {
+            gastosPorCategoria = transacaoRepository.somarDespesasPorCategoria(usuario);
+        }
+
         Map<Long, DashboardCategoriaDTO> mapResultados = new HashMap<>();
 
+        // 1. Popula com o que já foi gasto
         for (Object[] row : gastosPorCategoria){
             Categoria cat = (Categoria) row[0];
             BigDecimal totalGasto = (BigDecimal) row[1];
+            if (totalGasto == null) totalGasto = BigDecimal.ZERO;
 
-            mapResultados.put(cat.getId(),new DashboardCategoriaDTO(
-                    cat.getNome(), BigDecimal.ZERO, totalGasto, BigDecimal.ZERO.subtract(totalGasto))
+            mapResultados.put(cat.getId(), new DashboardCategoriaDTO(
+                    cat.getNome(),
+                    BigDecimal.ZERO,
+                    totalGasto,
+                    BigDecimal.ZERO.subtract(totalGasto))
             );
         }
+
         for (Orcamento orc : orcamentos){
             Long catId = orc.getCategoria().getId();
             BigDecimal limite = orc.getValor();
@@ -74,7 +102,7 @@ public class DashboardService {
                         existente.gasto(),
                         limite.subtract(existente.gasto())
                 ));
-            }else {
+            } else {
                 mapResultados.put(catId, new DashboardCategoriaDTO(
                         orc.getCategoria().getNome(),
                         limite,

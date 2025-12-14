@@ -4,15 +4,16 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-
 import java.math.BigDecimal;
 import java.time.LocalDate;
+
 
 @Entity
 @NoArgsConstructor
 @Table(name = "transacao")
 @Getter
 @Setter
+
 public class Transacao {
 
     @Id
@@ -31,7 +32,6 @@ public class Transacao {
     @Column(nullable = false, length = 10)
     private String tipo;
 
-
     @ManyToOne
     @JoinColumn(name = "usuario_id", nullable = false)
     private Usuario usuario;
@@ -40,6 +40,11 @@ public class Transacao {
     @JoinColumn(name = "categoria_id", nullable = false)
     private Categoria categoria;
 
+    @ManyToOne
+    @JoinColumn(name = "grupo_id", nullable = true) // Nullable = true, pois nem todo mundo tem grupo
+    private Grupo grupo;
+
+
     public Transacao(String descricao, BigDecimal valor, LocalDate data, String tipo, Usuario usuario, Categoria categoria){
         this.descricao = descricao;
         this.valor = valor;
@@ -47,6 +52,7 @@ public class Transacao {
         this.tipo = tipo;
         this.usuario = usuario;
         this.categoria = categoria;
-    }
+        this.grupo = grupo;
 
+    }
 }
